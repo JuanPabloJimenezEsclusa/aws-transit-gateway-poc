@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Bastion Host and App Instances
+
+Parameters:
+  SSHAccessCIDR:
+    Description: CIDR block allowed to access the bastion host via SSH
+    Type: String
+    Default: 0.0.0.0/0
+  BastionVPCId:
+    Description: ID of the Bastion VPC
+    Type: AWS::EC2::VPC::Id
+  BastionPublicSubnetId:
+    Description: ID of the Bastion public subnet
+    Type: AWS::EC2::Subnet::Id
+  App1VPCId:
+    Description: ID of the App1 VPC
+    Type: AWS::EC2::VPC::Id
+  App1PrivateSubnetId:
+    Description: ID of the App1 private subnet
+    Type: AWS::EC2::Subnet::Id
+  App2VPCId:
+    Description: ID of the App2 VPC
+    Type: AWS::EC2::VPC::Id
+  App2PrivateSubnetId:
+    Description: ID of the App2 private subnet
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows SSH access to the bastion host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHAccessCIDR
+      VpcId: !Ref BastionVPCId
+      Tags:
+        - Key: Name
+          Value: BastionSecurityGroup
+
+  App1SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows SSH and ICMP access to the app 1 instances
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.1.0.0/16
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 192.168.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.1.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 192.168.0.0/16
+      VpcId: !Ref App1VPCId
+      Tags:
+        - Key: Name
+          Value: App1SecurityGroup
+
+  App2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows SSH and ICMP access to the app 2 instances
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.1.0.0/16
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 192.168.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.0.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 10.1.0.0/16
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 192.168.0.0/16
+      VpcId: !Ref App2VPCId
+      Tags:
+        - Key: Name
+          Value: App2SecurityGroup
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-074197bd895f7745e # Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+      InstanceType: t2.micro
+      KeyName: transit-gateway-key-pair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref BastionSecurityGroup
+          SubnetId: !Ref BastionPublicSubnetId
+      Tags:
+        - Key: Name
+          Value: Bastion
+
+  App1Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-074197bd895f7745e # Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+      InstanceType: t2.micro
+      KeyName: transit-gateway-key-pair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'false'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref App1SecurityGroup
+          SubnetId: !Ref App1PrivateSubnetId
+      Tags:
+        - Key: Name
+          Value: App1VM
+
+  App2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-074197bd895f7745e # Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+      InstanceType: t2.micro
+      KeyName: transit-gateway-key-pair
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'false'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref App2SecurityGroup
+          SubnetId: !Ref App2PrivateSubnetId
+      Tags:
+        - Key: Name
+          Value: App2VM
+
+Outputs:
+  BastionHostId:
+    Description: The ID of the bastion host
+    Value: !Ref BastionHost
+  BastionHostPublicIP:
+    Description: The public IP address of the bastion host
+    Value: !GetAtt BastionHost.PublicIp
+  App1InstanceId:
+    Description: The ID of the App1 instance
+    Value: !Ref App1Instance
+  App1InstancePrivateIP:
+    Description: The private IP address of App1 instance
+    Value: !GetAtt App1Instance.PrivateIp
+  App2InstanceId:
+    Description: The ID of the App2 instance
+    Value: !Ref App2Instance
+  App2InstancePrivateIP:
+    Description: The private IP address of App2 instance
+    Value: !GetAtt App2Instance.PrivateIp

@@ -6,19 +6,16 @@ Description: The template creates TGW & an Egress VPC for internet.
   cloudformation now supports the creation of routes within a VPC route table, where the target is a
   transit gateway
 
-
 Parameters:
 
   AppCidr:
     Description: Default route for adding to app VPCs route tables
     Type: String
     Default: '0.0.0.0/0'
-
   EgressPublicCidr:
     Description: CIDR range to be added to public egress VPC route table
     Type: String
     Default: '10.0.0.0/8'
-
 
 Resources:
 
@@ -433,7 +430,7 @@ Resources:
 
 # We have not added a 192.168.0.0/16 black hole as for testing you may want to put an instance in the public subnet.
 # However, if you are only using the egress vpc as a route out, with a NAT gateway or similar proxy/NAT function,
-# then you can add the bloack hole for 192.168.0.0/16 as well
+# then you can add the black hole for 192.168.0.0/16 as well
 
 #  AppBlackhole192Route:
 #    Type: "AWS::EC2::TransitGatewayRoute"
@@ -501,9 +498,55 @@ Resources:
        DestinationCidrBlock: !Ref EgressPublicCidr
        TransitGatewayId: !Ref TransitGateway
 
-
 Outputs:
   Name:
     Value: !Ref AWS::StackName
   TransitGateway:
     Value: !Ref TransitGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-TransitGatewayId"
+  EgressVPCId:
+    Description: The ID of the Egress VPC
+    Value: !Ref EgressVPC
+    Export:
+      Name: !Sub "${AWS::StackName}-EgressVPCId"
+  PublicEgressSubnet1Id:
+    Description: The ID of the Public Egress Subnet 1
+    Value: !Ref PublicEgressVpcSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicEgressSubnet1Id"
+  PublicEgressSubnet2Id:
+    Description: The ID of the Public Egress Subnet 2
+    Value: !Ref PublicEgressVpcSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicEgressSubnet2Id"
+  App1VPCId:
+    Description: The ID of the App1 VPC
+    Value: !Ref App1VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-App1VPCId"
+  PrivateApp1Subnet1Id:
+    Description: The ID of the Private App1 Subnet 1
+    Value: !Ref App1Subnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateApp1Subnet1Id"
+  PrivateApp1Subnet2Id:
+    Description: The ID of the Private App1 Subnet 2
+    Value: !Ref App1Subnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateApp1Subnet2Id"
+  App2VPCId:
+    Description: The ID of the App2 VPC
+    Value: !Ref App2VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-App2VPCId"
+  PrivateApp2Subnet1Id:
+    Description: The ID of the Private App2 Subnet 1
+    Value: !Ref App2Subnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateApp2Subnet1Id"
+  PrivateApp2Subnet2Id:
+    Description: The ID of the Private App2 Subnet 2
+    Value: !Ref App2Subnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateApp2Subnet2Id"
